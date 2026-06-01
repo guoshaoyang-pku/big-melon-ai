@@ -1,0 +1,66 @@
+# AlphaZero-Suika hyper-parameters. Overridable on the CLI via --set k=v.
+# --------------------------------------------------------------------------
+# action / search
+K: 16                     # discrete drop columns across the play area
+num_simulations: 200      # MCTS sims per move (self-play)
+c_puct: 1.5
+dirichlet_alpha: 0.3
+dirichlet_eps: 0.25
+root_forced_visits: 0    # diagnostic knob: force N root visits/action before PUCT
+max_fruits: 80            # object-centric state cap (per-fruit block size)
+eval_batch: 32            # leaf-parallel batch for MCTS net eval (virtual loss)
+
+# network
+arch: transformer          # transformer (default) or mlp for old flat checkpoints
+token_dim: 128             # alias kept in checkpoints for object-token width
+d_model: 128
+n_heads: 4
+n_transformer_layers: 2
+dropout: 0.1
+transformer_ff_mult: 4
+hidden: 384                # legacy MLP width
+n_layers: 3                # legacy MLP depth
+boundary_features: false   # opt-in wall/death-line globals; keep false for old replay/checkpoints
+
+# self-play (continuous actor-learner; no per-round barrier)
+num_workers: 8            # resident CPU self-play workers (leaves 1 core)
+temp_moves: 12            # moves played at temperature 1.0 before exploiting
+temp_final: 0.25
+max_moves: 0              # 0 = no move cap; train only on real game_over
+max_game_seconds: 0       # 0 = no wall-clock cap; no truncated return targets
+worker_reload_sec: 20     # how often each worker reloads latest.pt
+
+# replay / training (off-policy)
+replay_capacity: 500000   # FIFO cap; ~0.67GB at this input dim, safe under 16GB
+min_buffer_to_train: 512  # warmup before the learner starts training
+batch_size: 512
+target_sample_reuse: 8    # off-policy throttle: avg gradient exposures/sample
+train_chunk: 16            # train steps per learner loop iteration
+mirror_augmentation: true # add x-mirrored copies when samples enter replay
+lr: 0.001
+weight_decay: 0.0001
+value_coef: 1.0
+device: mps
+
+# learner cadences (wall-clock seconds)
+latest_save_sec: 20       # refresh latest.pt so workers track the new policy
+log_every_sec: 30         # STATS line cadence
+buffer_save_sec: 300      # replay buffer disk snapshot
+snapshot_sec: 1800        # milestone checkpoint (step_XXXXXXXX.pt)
+
+# evaluation
+eval_every_sec: 900       # periodic eval cadence (0 disables)
+eval_simulations: 200
+eval_baseline_ckpt: backups/restart_20260531_231159/latest.pt  # one-shot comparison eval (step260 pre-restart)
+eval_seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+# misc
+base_seed: 12345
+run_seconds: 0            # 0 == run forever (until killed)
+
+# --- restart additions (aggressive cold-start data utilisation) ---
+adaptive_reuse: true        # scale target_sample_reuse by buffer size (<10k:6 <50k:8 <200k:12 else:16)
+collect_tree_samples: true  # mine high-visit MCTS internal nodes as extra training samples
+tree_min_visits: 16         # only export internal nodes with >= this many visits
+tree_max_nodes: 6           # cap extra nodes exported per move (excludes root)
+tree_value_weight: 0        # 0 = MCTS internal nodes contribute NO value loss (policy target kept); protects value head from bootstrap noise

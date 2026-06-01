@@ -3,3 +3,51 @@
 /.idea
 /*_local*
 *_local.*
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Training datasets, checkpoints, and logs
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.log
+*.jsonl
+**/checkpoints/
+**/logs/
+
+# Generated evaluation outputs and local experiment archives
+plots/
+**/plots/
+traces/
+runs/
+outputs/
+**/_smoke/
+**/backups/
+**/archives/
+**/_bak/
+*.png
+*.gif
+*.mp4
+
+# Local backup files
+*.bak
+*.bak_*
+*.prebak_*
+
+# Generated run metadata
+**/config.effective.yaml
+**/data/*_summary.json
+**/novalue_endgame_*/

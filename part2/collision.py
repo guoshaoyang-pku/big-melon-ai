@@ -4,7 +4,12 @@ from config import config
 from particle import Particle
 
 
+MAX_FRUIT_N = 10
+
+
 def resolve_collision(particle1, particle2, space):
+    if particle1.n == particle2.n == MAX_FRUIT_N:
+        return
     distance = np.linalg.norm(particle1.pos - particle2.pos)
     if distance < 2 * particle1.radius:
         particle1.kill(space)
@@ -15,10 +20,12 @@ def resolve_collision(particle1, particle2, space):
             space,
         )
         for p in space.shapes:
+            if p is new_particle:
+                continue
             if isinstance(p, Particle) and p.alive:
                 vector = p.pos - new_particle.pos
                 distance = np.linalg.norm(vector)
-                if distance < new_particle.radius + p.radius:
+                if 0 < distance < new_particle.radius + p.radius:
                     impulse = config.physics.impulse * vector / (distance ** 2)
                     p.body.apply_impulse_at_local_point(tuple(impulse))
 
@@ -27,9 +34,16 @@ def collide(arbiter, space, data):
     particle1, particle2 = arbiter.shapes
     alive = particle1.alive and particle2.alive
     same = particle1.n == particle2.n
-    particle1.has_collided = not same
-    particle2.has_collided = not same
-    if same and alive:
+    max_pair = same and particle1.n == MAX_FRUIT_N
+
+    if not same or max_pair:
+        particle1.has_collided = True
+        particle2.has_collided = True
+        return alive
+
+    particle1.has_collided = False
+    particle2.has_collided = False
+    if alive:
         resolve_collision(particle1, particle2, space)
         data["score"] += config[particle1.n, "points"]
-    return not same and alive
+    return False
